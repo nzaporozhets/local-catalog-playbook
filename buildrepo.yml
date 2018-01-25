@@ -14,8 +14,7 @@
       make:
         chdir: /tmp/dcos/catalog/universe/docker/local-universe
         target: base
-      become: true
-      become_user: root
+      become: yes
 
     - name: make Local Catalog
       make:
@@ -24,8 +23,7 @@
         params:
           DCOS_VERSION: "{{ dcos_version }}"
           DCOS_PACKAGE_INCLUDE: "{{ packages_list }}" 
-      become: true
-      become_user: root
+      become: yes
 
     - name: Change ownership on tarball
       file:
