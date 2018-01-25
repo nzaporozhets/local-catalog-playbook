@@ -1,0 +1,4 @@
+#TODO: implement pre-flight checks/prereqs playbook.
+- import_playbook: buildrepo.yml
+- import_playbook: configrepo.yml
+- import_playbook: agentcerts.yml

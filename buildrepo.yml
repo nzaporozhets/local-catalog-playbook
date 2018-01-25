@@ -1,0 +1,36 @@
+- hosts: localhost
+
+  tasks:
+    - name: Loading variables
+      include_vars: default_vars
+
+    - name: Clone Catalog repo
+      git:
+        repo: 'https://github.com/mesosphere/universe.git'
+        dest: /tmp/dcos/catalog/universe
+        version: version-3.x
+
+    - name: make base
+      make:
+        chdir: /tmp/dcos/catalog/universe/docker/local-universe
+        target: base
+      become: true
+      become_user: root
+
+    - name: make Local Catalog
+      make:
+        chdir: /tmp/dcos/catalog/universe/docker/local-universe
+        target: local-universe
+        params:
+          DCOS_VERSION: "{{ dcos_version }}"
+          DCOS_PACKAGE_INCLUDE: "{{ packages_list }}" 
+      become: true
+      become_user: root
+
+    - name: Change ownership on tarball
+      file:
+        path : /tmp/dcos/catalog/universe/docker/local-universe/local-universe.tar.gz
+        owner: "{{ ansible_user_id }}"
+        mode: 0644
+      become: yes
+

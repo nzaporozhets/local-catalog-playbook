@@ -1,0 +1,61 @@
+- hosts: agent
+
+  tasks:
+    - name: Create certificates directory
+      file:
+        path: /etc/docker/certs.d/master.mesos:5000
+        state: directory
+        mode: 0755 
+      become: yes
+
+    - name: Download certificate from master
+      get_url:
+        url: http://master.mesos:8082/certs/domain.crt
+        dest: /etc/docker/certs.d/master.mesos:5000/ca.crt
+      become: yes
+       
+    - name: Restart docker
+      systemd: state=restarted name=docker
+      become: yes
+
+    - name: Create certificates directory
+      file:
+        path: /var/lib/dcos/pki/tls/certs
+        state: directory
+
+    - name: Copy certificate
+      copy:
+        src: /etc/docker/certs.d/master.mesos:5000/ca.crt
+        dest: /var/lib/dcos/pki/tls/certs/ca.crt
+        remote_src: yes
+
+      become: yes
+
+    - name: Ensure that openssl is installed
+      package:
+        name: openssl
+        state: latest
+      become: yes
+
+    - name: Check certificate hash
+      command: "openssl x509 -hash -noout -in ca.crt"
+      args:
+        chdir: /var/lib/dcos/pki/tls/certs/
+      register: key
+    - debug: msg="Hash is {{ key.stdout }}" 
+
+    - name: Create a softlink
+      file:
+        src: /var/lib/dcos/pki/tls/certs/ca.crt
+        dest: /var/lib/dcos/pki/tls/certs/{{ key.stdout }}.0
+        state: link
+      become: yes
+
+- hosts: localhost
+  tasks:
+    - debug: msg="Private Catalog is configured and added to your masters. To point your DC/OS to private Catalog, follow these steps:" 
+    - debug: msg="1. Remove global Catalog"
+    - debug: msg="   dcos package repo remove Universe"
+    - debug: msg="2. Add private Catalog to list" 
+    - debug: msg="   dcos package repo add local-universe http://<master_private_ip>:8082/repo "
+    - debug: msg="Private Catalog is configured and ready to go!"

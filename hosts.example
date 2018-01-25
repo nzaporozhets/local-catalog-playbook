@@ -1,0 +1,7 @@
+localhost ansible_connection=local
+
+[master]
+host1
+[agent]
+host1
+host2

@@ -1,0 +1,46 @@
+- hosts: master
+
+  tasks:
+    - name: Create tmp directory
+      file: 
+        path: /tmp/dcos/local-catalog
+        state: directory
+
+    - name: Copy generated Catalog tarball to master
+      copy:
+        src: /tmp/dcos/catalog/universe/docker/local-universe/local-universe.tar.gz
+        dest: /tmp/dcos/local-catalog/local-universe.tar.gz
+     
+    - name: Create HTTP service
+      get_url:
+        url: https://raw.githubusercontent.com/mesosphere/universe/version-3.x/docker/local-universe/dcos-local-universe-http.service
+        dest: /etc/systemd/system/dcos-local-universe-http.service
+      become: yes
+
+    - name: Create registry service
+      get_url:
+        url: https://raw.githubusercontent.com/mesosphere/universe/version-3.x/docker/local-universe/dcos-local-universe-registry.service
+        dest: /etc/systemd/system/dcos-local-universe-registry.service
+      become: yes
+
+    - name: Load Catalog image to Docker
+      shell: docker load < local-universe.tar.gz
+      args:
+        chdir: /tmp/dcos/local-catalog/
+      become: yes
+
+    - name: Enable and start HTTP service
+      systemd:
+        state: started
+        enabled: yes
+        daemon_reload: yes
+        name: dcos-local-universe-http.service
+      become: yes
+
+    - name: Enable and start registry service
+      systemd:
+        state: started
+        enabled: yes
+        daemon_reload: yes
+        name: dcos-local-universe-registry.service
+      become: yes
